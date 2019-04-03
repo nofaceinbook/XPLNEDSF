@@ -1,6 +1,6 @@
 #******************************************************************************
 #
-# xplnedsf.py        Version 0.1
+# xplnedsf.py        Version 0.11
 # ---------------------------------------------------------
 # Python module for reading and writing X_Plane DSF files.
 #   (zipped DSF files have to be unzipped with 7-zip first!)
@@ -538,6 +538,57 @@ class XPLNEDSF:
         ####### TO INCLUDE ALSO OTHER POLYGON COMMAND IDs between 12 and 15 !!!!!!!!!!!!!!!!!!!!!!!!!!
         return l
 
+    def BoundingRectangle(self, vertices): #returns 4-tuple of (latS, latN, lonW, lonE) building the smallest rectangle to include all vertices in list as pairs of [lon, lat]
+        minx = 181  #use maximal out of bound values to be reset by real coordinates from patch
+        maxx = -181
+        miny = 91
+        maxy = -91
+        for v in vertices: #all vertexes of each triangle in patch
+            if v[0] < minx:
+                minx = v[0]
+            if v[0] > maxx:
+                maxx = v[0]
+            if v[1] < miny:
+                miny = v[1]
+            if v[1] > maxy:
+                maxy = v[1]
+        return miny, maxy, minx, maxx
+
+
+    def TriaVertices(self, t): #returns 3 vertices of triangle as list of [lon, lat] pairs
+        return [  [self.V[t[0][0]][t[0][1]][0], self.V[t[0][0]][t[0][1]][1]], [self.V [t[1][0]] [t[1][1]][0], self.V[t[1][0]][t[1][1]][1]],  [self.V[t[2][0]][t[2][1]][0], self.V[t[2][0]][t[2][1]][1]] ]
+
+    
+    def PatchesInArea (self, latS, latN, lonW, lonE, log=1):
+    #
+    # returns a list of all patches in dsf, where the rectangle bounding of the patch intersects
+    # the rectangle area defined by coordinates
+    # Note: it could be the case that there is not part of the patch really intersecting the area but this
+    #       functions reduces the amount of patches that have then carefully to be inspected e.g. for real intersections
+    #
+        if log:
+            print("Start to find patches intersecting area SW (", latS, lonW, ") and NE (", latN, lonE, ") ...")
+        l = [] # list of patch-ids intersecting area
+        count = 0
+        for p in self.Patches:
+            v = []
+            for t in p.triangles(): #all triangles in each patch
+                v.extend(self.TriaVertices(t)) #so all vertices of the patch
+            miny, maxy, minx, maxx = self.BoundingRectangle(v)
+            if log > 2:
+                print("Checking patch", count, "of", len(self.Patches), "which lies SW (", miny, minx, ") and NE (", maxy, maxx, ")" )
+            if not (minx < lonW and maxx < lonW): #x-range of box is not completeley West of area
+                if not (minx > lonE and maxx > lonE): #x-range of box is not completele East of area
+                    if not (miny < latS and maxy < latS): #y-range is not completele South of area
+                        if not (miny > latN and maxy > latN): #y-range is not conmpletele North of ares
+                            l.append(p)  #so we have an intersection of box with area and append the patch index
+                            if log > 1:
+                                print ("Patch", count, "SW (", miny, minx, ") and NE (", maxy, maxx, ") does intersect.")
+            count += 1
+        if log:
+            print(len(l), "intersecting patches of", len(self.Patches), "patches found.")
+        return l
+           
                     
     def read(self, file, log=1):   ###### NEXT STEP: Also read 7-ZIP FILES ###########
         if not os.path.isfile(file):
@@ -617,3 +668,4 @@ class XPLNEDSF:
         if log:
             print("  ...finshed writing dsf-file.", flush = True)
         return 0
+
