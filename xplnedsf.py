@@ -1,6 +1,6 @@
 #******************************************************************************
 #
-# xplnedsf.py        Version 0.11
+# xplnedsf.py        Version 0.12
 # ---------------------------------------------------------
 # Python module for reading and writing X_Plane DSF files.
 #   (zipped DSF files have to be unzipped with 7-zip first!)
@@ -623,8 +623,9 @@ class XPLNEDSF:
                         else:
                             self._Atoms_[atomID] = bytes #for single atoms there is just this string
                 else:
-                    print ("Unknown Atom ID:", atomID, "    Stopping now!!!") ####SHOULD IN NEXT VERSION RAISE EXCEPTION
-                    return 3               
+                    print ("WARNING: Jumping over unknown Atom ID (reversed):", atomID, "with length", atomLength) ####SHOULD IN NEXT VERSION RAISE EXCEPTION
+                    bytes = f.read(atomLength-8)
+                    #return 3               
             if log > 1:
                 print("Reached FOOTER with Hash-Value:",f.read(16), flush = True)
         self._unpackAtoms_(log)
