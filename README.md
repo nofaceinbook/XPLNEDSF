@@ -11,4 +11,6 @@ For the moment only changes to 16-BIT Vertex Pools are changed to new files.
 However, this is enough to change the height of vertices in a specified area.
 This is demonstrated by the script dsfVertexTool.py.
 
+An other useful example is the export of a kml file of an are given by S,N,W,E coordinates of a dsf-file. You can view the it very good e.g. with google earth.
+
 Work in progress....
